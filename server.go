@@ -3,10 +3,14 @@ package main
 import (
 	"os"
 
+	"github.com/iamsirid/assessment/database"
+
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
+
+	database.InitDatabase()
 
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
