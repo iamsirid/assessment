@@ -3,13 +3,36 @@ package database
 import (
 	"database/sql"
 	"io"
-	"log"
 	"os"
 
 	_ "github.com/lib/pq"
 )
 
-func readSqlFile(filename string) (string, error) {
+type IDatabaseHelper interface {
+	ConnectToDatabase(string) (*sql.DB, error)
+	ReadSqlFile(string) (string, error)
+	CreateTable(*sql.DB) error
+}
+
+type DatabaseHelper struct {
+}
+
+func (h *DatabaseHelper) ConnectToDatabase(databaseUrl string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", databaseUrl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func (h *DatabaseHelper) ReadSqlFile(filename string) (string, error) {
 	file, err := os.Open("database/" + filename + ".sql")
 	if err != nil {
 		return "", err
@@ -22,8 +45,10 @@ func readSqlFile(filename string) (string, error) {
 	}
 	return string(data), nil
 }
-func createTable(db *sql.DB) error {
-	createTableQuery, err := readSqlFile("create-table")
+
+func (h *DatabaseHelper) CreateTable(db *sql.DB) error {
+
+	createTableQuery, err := h.ReadSqlFile("create-table")
 	if err != nil {
 		return err
 	}
@@ -34,29 +59,21 @@ func createTable(db *sql.DB) error {
 	}
 
 	return nil
-
 }
 
-func InitDatabase() {
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+func InitDatabase(databaseUrl string, dbh IDatabaseHelper) error {
+
+	db, err := dbh.ConnectToDatabase(databaseUrl)
 
 	if err != nil {
-		log.Fatal("Connect to database error", err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Ping to database error", err)
+		return err
 	}
 
-	log.Println("Connected to database")
-
-	err = createTable(db)
+	err = dbh.CreateTable(db)
 
 	if err != nil {
-		log.Fatal("Create table error", err)
+		return err
 	}
 
-	log.Println("Table created")
+	return nil
 }

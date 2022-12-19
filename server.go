@@ -10,7 +10,11 @@ import (
 
 func main() {
 
-	database.InitDatabase()
+	err := database.InitDatabase(os.Getenv("DATABASE_URL"), &database.DatabaseHelper{})
+
+	if err != nil {
+		panic(err)
+	}
 
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
