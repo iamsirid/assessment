@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/iamsirid/assessment/database"
@@ -8,9 +9,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Err struct {
+	Message string `json:"message"`
+}
+
 func main() {
 
-	err := database.InitDatabase(os.Getenv("DATABASE_URL"), &database.DatabaseHelper{})
+	db, err := database.InitDatabase(os.Getenv("DATABASE_URL"), &database.DatabaseHelper{})
 
 	if err != nil {
 		panic(err)
@@ -19,6 +24,24 @@ func main() {
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(200, "Hello, World!")
+	})
+
+	e.POST("/expenses", func(c echo.Context) error {
+		expense := database.Expense{}
+		err := c.Bind(&expense)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
+		}
+
+		id, err := database.InsertData(db, expense)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+
+		expense.Id = id
+
+		return c.JSON(http.StatusOK, expense)
+
 	})
 
 	e.Logger.Fatal(e.Start(os.Getenv("PORT")))

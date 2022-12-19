@@ -5,8 +5,16 @@ import (
 	"io"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
+
+type Expense struct {
+	Id     int      `json:"id"`
+	Title  string   `json:"title"`
+	Amount float64  `json:"amount"`
+	Note   string   `json:"note"`
+	Tags   []string `json:"tags"`
+}
 
 type IDatabaseHelper interface {
 	ConnectToDatabase(string) (*sql.DB, error)
@@ -61,19 +69,31 @@ func (h *DatabaseHelper) CreateTable(db *sql.DB) error {
 	return nil
 }
 
-func InitDatabase(databaseUrl string, dbh IDatabaseHelper) error {
+func InitDatabase(databaseUrl string, dbh IDatabaseHelper) (*sql.DB, error) {
 
 	db, err := dbh.ConnectToDatabase(databaseUrl)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = dbh.CreateTable(db)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return db, nil
+}
+
+func InsertData(db *sql.DB, expense Expense) (int, error) {
+	row := db.QueryRow("INSERT INTO expenses (title, amount, note, tags) VALUES ($1, $2, $3, $4) RETURNING id",
+		expense.Title, expense.Amount, expense.Note, pq.Array(expense.Tags))
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+
 }
