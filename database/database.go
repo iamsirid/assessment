@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -16,7 +16,7 @@ func readSqlFile(filename string) (string, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", err
 	}
