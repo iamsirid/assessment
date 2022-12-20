@@ -97,3 +97,13 @@ func InsertData(db *sql.DB, expense Expense) (int, error) {
 	return id, nil
 
 }
+
+func GetData(db *sql.DB, id int) (Expense, error) {
+	row := db.QueryRow("SELECT * FROM expenses WHERE id = $1", id)
+	expense := Expense{}
+	err := row.Scan(&expense.Id, &expense.Title, &expense.Amount, &expense.Note, pq.Array(&expense.Tags))
+	if err != nil {
+		return Expense{}, err
+	}
+	return expense, nil
+}

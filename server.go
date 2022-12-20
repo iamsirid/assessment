@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/iamsirid/assessment/database"
 
@@ -42,6 +43,19 @@ func main() {
 
 		return c.JSON(http.StatusOK, expense)
 
+	})
+
+	e.GET("/expenses/:id", func(c echo.Context) error {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+		expense, err := database.GetData(db, id)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, expense)
 	})
 
 	e.Logger.Fatal(e.Start(os.Getenv("PORT")))
