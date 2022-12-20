@@ -2,11 +2,14 @@ package database
 
 import (
 	"database/sql"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 
 	"github.com/lib/pq"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type FakeDatabaseHelper struct{}
@@ -64,5 +67,28 @@ func TestInsertData(t *testing.T) {
 
 	if wantId != gotId {
 		t.Errorf("Expect ID to be %v, got %v", wantId, gotId)
+	}
+}
+
+func TestGetData(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	if err != nil {
+		t.Errorf("Error in creating mock database: %v", err)
+	}
+
+	wantExpense := Expense{Id: 1, Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}}
+
+	mockRow := mock.NewRows([]string{"id", "title", "amount", "note", "tags"}).AddRow(wantExpense.Id, wantExpense.Title, wantExpense.Amount, wantExpense.Note, pq.Array(wantExpense.Tags))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM expenses")).WithArgs(1).WillReturnRows(mockRow)
+
+	gotExpense, err := GetData(db, 1)
+	if err != nil {
+		t.Errorf("Error in GetData: %v", err)
+	}
+
+	if !cmp.Equal(wantExpense, gotExpense) {
+		t.Errorf("Expect expense to be %v, got %v", wantExpense, gotExpense)
 	}
 }
