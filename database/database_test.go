@@ -48,15 +48,21 @@ func TestInsertData(t *testing.T) {
 		t.Errorf("Error in creating mock database: %v", err)
 	}
 
-	mock.ExpectQuery("INSERT INTO expenses").WithArgs("test", 100.0, "test", pq.Array([]string{"test1", "test2"})).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	insertExpense := Expense{Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}}
 
-	id, err := InsertData(db, Expense{Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}})
+	wantId := 1
+
+	mockReturnRow := sqlmock.NewRows([]string{"id"}).AddRow(wantId)
+
+	mock.ExpectQuery("INSERT INTO expenses").WithArgs(insertExpense.Title, insertExpense.Amount, insertExpense.Note, pq.Array(insertExpense.Tags)).WillReturnRows(mockReturnRow)
+
+	gotId, err := InsertData(db, Expense{Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}})
 
 	if err != nil {
 		t.Errorf("Error in InsertData: %v", err)
 	}
 
-	if id != 1 {
-		t.Errorf("Expect ID to be 1, got %v", id)
+	if wantId != gotId {
+		t.Errorf("Expect ID to be %v, got %v", wantId, gotId)
 	}
 }
