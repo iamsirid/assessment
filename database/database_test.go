@@ -92,3 +92,30 @@ func TestGetData(t *testing.T) {
 		t.Errorf("Expect expense to be %v, got %v", wantExpense, gotExpense)
 	}
 }
+
+func TestUpdateData(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	if err != nil {
+		t.Errorf("Error in creating mock database: %v", err)
+	}
+	originalExpense := Expense{Id: 1, Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}}
+
+	mock.NewRows([]string{"id", "title", "amount", "note", "tags"}).AddRow(originalExpense.Id, originalExpense.Title, originalExpense.Amount, originalExpense.Note, pq.Array(originalExpense.Tags))
+
+	updateExpense := Expense{Id: 1, Title: "test-updated", Amount: 200.0, Note: "test-updated", Tags: []string{"test1", "test2", "testt3"}}
+
+	mockUpdateRow := mock.NewRows([]string{"id", "title", "amount", "note", "tags"}).AddRow(updateExpense.Id, updateExpense.Title, updateExpense.Amount, updateExpense.Note, pq.Array(updateExpense.Tags))
+
+	mock.ExpectQuery(regexp.QuoteMeta("UPDATE expenses")).WithArgs(updateExpense.Title, updateExpense.Amount, updateExpense.Note, pq.Array(updateExpense.Tags), updateExpense.Id).WillReturnRows(mockUpdateRow)
+
+	gotExpense, err := UpdateData(db, updateExpense.Id, updateExpense)
+
+	if err != nil {
+		t.Errorf("Error in UpdateData: %v", err)
+	}
+
+	if !cmp.Equal(updateExpense, gotExpense) {
+		t.Errorf("Expect return expense to be %v, got %v", updateExpense, gotExpense)
+	}
+}

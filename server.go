@@ -58,5 +58,24 @@ func main() {
 		return c.JSON(http.StatusOK, expense)
 	})
 
+	e.PUT("/expenses/:id", func(c echo.Context) error {
+		payloadExpense := database.Expense{}
+		err := c.Bind(&payloadExpense)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
+		}
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+		updatedExpense, err := database.UpdateData(db, id, payloadExpense)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, updatedExpense)
+
+	})
+
 	e.Logger.Fatal(e.Start(os.Getenv("PORT")))
 }
