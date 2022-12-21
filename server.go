@@ -41,7 +41,7 @@ func main() {
 
 		expense.Id = id
 
-		return c.JSON(http.StatusOK, expense)
+		return c.JSON(http.StatusCreated, expense)
 
 	})
 
