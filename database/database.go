@@ -107,3 +107,14 @@ func GetData(db *sql.DB, id int) (Expense, error) {
 	}
 	return expense, nil
 }
+
+func UpdateData(db *sql.DB, id int, payloadExpense Expense) (Expense, error) {
+	row := db.QueryRow("UPDATE expenses SET title = $1, amount = $2, note = $3, tags = $4 WHERE id = $5 RETURNING *",
+		payloadExpense.Title, payloadExpense.Amount, payloadExpense.Note, pq.Array(payloadExpense.Tags), id)
+	updatedExpense := Expense{}
+	err := row.Scan(&updatedExpense.Id, &updatedExpense.Title, &updatedExpense.Amount, &updatedExpense.Note, pq.Array(&updatedExpense.Tags))
+	if err != nil {
+		return Expense{}, err
+	}
+	return updatedExpense, nil
+}
