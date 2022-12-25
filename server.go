@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"time"
 
 	"github.com/iamsirid/assessment/database"
 
@@ -86,5 +89,19 @@ func main() {
 		return c.JSON(http.StatusOK, expenses)
 	})
 
-	e.Logger.Fatal(e.Start(os.Getenv("PORT")))
+	go func() {
+		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
+
 }
