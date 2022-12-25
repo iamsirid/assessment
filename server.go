@@ -77,5 +77,14 @@ func main() {
 
 	})
 
+	e.GET("/expenses", func(c echo.Context) error {
+		expenses, err := database.GetAllData(db)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, Err{Message: err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, expenses)
+	})
+
 	e.Logger.Fatal(e.Start(os.Getenv("PORT")))
 }
