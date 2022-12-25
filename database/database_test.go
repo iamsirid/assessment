@@ -119,3 +119,34 @@ func TestUpdateData(t *testing.T) {
 		t.Errorf("Expect return expense to be %v, got %v", updateExpense, gotExpense)
 	}
 }
+
+func TestGetAllData(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	if err != nil {
+		t.Errorf("Error in creating mock database: %v", err)
+	}
+
+	wantExpenses := []Expense{
+		{Id: 1, Title: "test", Amount: 100.0, Note: "test", Tags: []string{"test1", "test2"}},
+		{Id: 2, Title: "test2", Amount: 120.0, Note: "test2", Tags: []string{"test1", "test2", "test3"}}}
+
+	mockRows := mock.NewRows([]string{"id", "title", "amount", "note", "tags"})
+
+	for _, wantExpense := range wantExpenses {
+		mockRows = mockRows.AddRow(wantExpense.Id, wantExpense.Title, wantExpense.Amount, wantExpense.Note, pq.Array(wantExpense.Tags))
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM expenses")).WillReturnRows(mockRows)
+
+	gotExpenses, err := GetAllData(db)
+	if err != nil {
+		t.Errorf("Error in GetAllData: %v", err)
+	}
+
+	for i := 0; i < len(gotExpenses); i++ {
+		if !cmp.Equal(wantExpenses[i], gotExpenses[i]) {
+			t.Errorf("Expect expense to be %v, got %v", wantExpenses[i], gotExpenses[i])
+		}
+	}
+}

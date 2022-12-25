@@ -118,3 +118,21 @@ func UpdateData(db *sql.DB, id int, payloadExpense Expense) (Expense, error) {
 	}
 	return updatedExpense, nil
 }
+
+func GetAllData(db *sql.DB) ([]Expense, error) {
+	rows, err := db.Query("SELECT * FROM expenses")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	expenses := []Expense{}
+	for rows.Next() {
+		expense := Expense{}
+		err := rows.Scan(&expense.Id, &expense.Title, &expense.Amount, &expense.Note, pq.Array(&expense.Tags))
+		if err != nil {
+			return nil, err
+		}
+		expenses = append(expenses, expense)
+	}
+	return expenses, nil
+}
