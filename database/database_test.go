@@ -22,10 +22,6 @@ func (h *FakeDatabaseHelper) ConnectToDatabase(databaseUrl string) (*sql.DB, err
 	return db, err
 }
 
-func (h *FakeDatabaseHelper) ReadSqlFile(filename string) (string, error) {
-	return "", nil
-}
-
 func (h *FakeDatabaseHelper) CreateTable(db *sql.DB) error {
 	return nil
 }
