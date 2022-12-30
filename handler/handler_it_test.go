@@ -1,3 +1,5 @@
+//go:build integration
+
 package handler
 
 import (
@@ -5,16 +7,77 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"os"
+	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/iamsirid/assessment/database"
+
+	"github.com/labstack/echo/v4"
 )
 
+func init() {
+	// ref: https://intellij-support.jetbrains.com/hc/en-us/community/posts/360009685279-Go-test-working-directory-keeps-changing-to-dir-of-the-test-file-instead-of-value-in-template
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Join(path.Dir(filename), "..")
+	err := os.Chdir(dir)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func setupServer() {
+
+	db, err := database.InitDatabase(os.Getenv("DATABASE_URL"), &database.DatabaseHelper{})
+
+	if err != nil {
+		panic(err)
+	}
+
+	eh := echo.New()
+
+	go func(e *echo.Echo) {
+
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				c.Set("db", db)
+				return next(c)
+			}
+		})
+
+		e.POST("/expenses", CreateExpenseHandler)
+
+		e.GET("/expenses/:id", GetExpenseByIdHandler)
+
+		e.PUT("/expenses/:id", UpdateExpenseByIdHandler)
+
+		e.GET("/expenses", GetAllExpensesHandler)
+
+		e.Start(os.Getenv("PORT"))
+	}(eh)
+	for {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost%v", os.Getenv("PORT")), 3*time.Second)
+		if err != nil {
+			log.Println(err)
+		}
+		if conn != nil {
+			conn.Close()
+			break
+		}
+	}
+}
+
 func TestCreateExpenseHandler(t *testing.T) {
+
+	setupServer()
+
 	body := bytes.NewBufferString(`{
 		"title": "test",
 		"amount": 100.0,
@@ -162,6 +225,7 @@ func TestUpdateExpenseById(t *testing.T) {
 }
 
 func TestGetAllExpenses(t *testing.T) {
+
 	seedExpense(t, `{
 		"title": "test",
 		"amount": 100.0,

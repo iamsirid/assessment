@@ -1,0 +1,5 @@
+FROM golang:1.19-alpine
+
+WORKDIR /go/src/target
+
+CMD CGO_ENABLED=0 DATABASE_URL=postgres://root:root@db:5432/assessment?sslmode=disable PORT=:2565 go test -v -tags integration ./...
