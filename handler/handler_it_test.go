@@ -23,16 +23,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func init() {
-	// ref: https://intellij-support.jetbrains.com/hc/en-us/community/posts/360009685279-Go-test-working-directory-keeps-changing-to-dir-of-the-test-file-instead-of-value-in-template
-	_, filename, _, _ := runtime.Caller(0)
-	dir := path.Join(path.Dir(filename), "..")
-	err := os.Chdir(dir)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func setupServer() {
 
 	db, err := database.InitDatabase(os.Getenv("DATABASE_URL"), &database.DatabaseHelper{})
@@ -74,10 +64,19 @@ func setupServer() {
 	}
 }
 
-func TestCreateExpenseHandler(t *testing.T) {
+func init() {
+	// ref: https://intellij-support.jetbrains.com/hc/en-us/community/posts/360009685279-Go-test-working-directory-keeps-changing-to-dir-of-the-test-file-instead-of-value-in-template
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Join(path.Dir(filename), "..")
+	err := os.Chdir(dir)
+	if err != nil {
+		panic(err)
+	}
 
 	setupServer()
+}
 
+func TestCreateExpenseHandler(t *testing.T) {
 	body := bytes.NewBufferString(`{
 		"title": "test",
 		"amount": 100.0,
