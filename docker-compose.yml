@@ -1,0 +1,26 @@
+version: "3.3"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "2565:2565"
+    environment:
+      - DATABASE_URL=postgres://root:root@db:5432/assessment?sslmode=disable
+      - PORT=:2565
+      - CGO_ENABLED=0
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=assessment
+    ports:
+      - "5432:5432"
