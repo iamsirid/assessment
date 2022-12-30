@@ -30,6 +30,16 @@ func main() {
 		}
 	})
 
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authKey := c.Request().Header.Get("Authorization")
+			if authKey != "November 10, 2009" {
+				return c.JSON(http.StatusUnauthorized, "Unauthorized")
+			}
+			return next(c)
+		}
+	})
+
 	e.POST("/expenses", handler.CreateExpenseHandler)
 
 	e.GET("/expenses/:id", handler.GetExpenseByIdHandler)
