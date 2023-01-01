@@ -37,20 +37,6 @@ func (h *DatabaseHelper) ConnectToDatabase(databaseUrl string) (*sql.DB, error) 
 	return db, nil
 }
 
-// func (h *DatabaseHelper) ReadSqlFile(filename string) (string, error) {
-// 	file, err := os.Open("database/" + filename + ".sql")
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer file.Close()
-
-// 	data, err := io.ReadAll(file)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return string(data), nil
-// }
-
 func (h *DatabaseHelper) CreateTable(db *sql.DB) error {
 
 	createTableQuery := `
