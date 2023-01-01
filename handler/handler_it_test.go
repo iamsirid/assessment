@@ -67,135 +67,181 @@ func init() {
 }
 
 func TestCreateExpenseHandler(t *testing.T) {
-	body := bytes.NewBufferString(`{
-		"title": "test",
-		"amount": 100.0,
-		"note": "test",
-		"tags": ["test1", "test2"]
-	}`)
-	expense := database.Expense{}
+
+	bodyExpense := database.Expense{
+		Title:  "test",
+		Amount: 100.0,
+		Note:   "test",
+		Tags:   []string{"test1", "test2"},
+	}
+	bodyBytes, err := json.Marshal(bodyExpense)
+
+	if err != nil {
+		t.Errorf("Error in encoding request body: %v", err)
+	}
+
+	body := bytes.NewBuffer(bodyBytes)
+
+	gotExpense := database.Expense{}
 
 	res := request(http.MethodPost, uri("expenses"), body)
-	err := res.Decode(&expense)
+	err = res.Decode(&gotExpense)
 
 	if err != nil {
 		t.Errorf("Error in decoding response: %v", err)
 	}
 
 	assert.Equal(t, res.StatusCode, http.StatusCreated)
-	assert.Equal(t, expense.Title, "test")
-	assert.Equal(t, expense.Amount, 100.0)
-	assert.Equal(t, expense.Note, "test")
-	assert.Equal(t, len(expense.Tags), 2)
-	assert.Equal(t, expense.Tags[0], "test1")
-	assert.Equal(t, expense.Tags[1], "test2")
+	assert.Equal(t, gotExpense.Title, bodyExpense.Title)
+	assert.Equal(t, gotExpense.Amount, bodyExpense.Amount)
+	assert.Equal(t, gotExpense.Note, bodyExpense.Note)
+	assert.Equal(t, len(gotExpense.Tags), len(bodyExpense.Tags))
+
+	for i := range gotExpense.Tags {
+		assert.Equal(t, gotExpense.Tags[i], bodyExpense.Tags[i])
+	}
 
 }
 
 func TestGetExpenseHandler(t *testing.T) {
-	origExpense := seedExpense(t, `{
-		"title": "test",
-		"amount": 100.0,
-		"note": "test",
-		"tags": ["test1", "test2"]
-	}`)
+	toSeedExpense := database.Expense{
+		Title:  "test",
+		Amount: 100.0,
+		Note:   "test",
+		Tags:   []string{"test1", "test2"},
+	}
 
-	expense := database.Expense{}
+	toSeedBytes, err := json.Marshal(toSeedExpense)
+
+	if err != nil {
+		t.Errorf("Error in encoding request body: %v", err)
+	}
+
+	origExpense := seedExpense(t, string(toSeedBytes))
+
+	gotExpense := database.Expense{}
 
 	res := request(http.MethodGet, uri("expenses/"+strconv.Itoa(origExpense.Id)), nil)
-	err := res.Decode(&expense)
+	err = res.Decode(&gotExpense)
 
 	if err != nil {
 		t.Errorf("Error in decoding response: %v", err)
 	}
 
 	assert.Equal(t, res.StatusCode, http.StatusOK)
-	assert.Equal(t, expense.Title, "test")
-	assert.Equal(t, expense.Amount, 100.0)
-	assert.Equal(t, expense.Note, "test")
-	assert.Equal(t, len(expense.Tags), 2)
-	assert.Equal(t, expense.Tags[0], "test1")
-	assert.Equal(t, expense.Tags[1], "test2")
+	assert.Equal(t, gotExpense.Title, toSeedExpense.Title)
+	assert.Equal(t, gotExpense.Amount, toSeedExpense.Amount)
+	assert.Equal(t, gotExpense.Note, toSeedExpense.Note)
+	assert.Equal(t, len(gotExpense.Tags), len(toSeedExpense.Tags))
+
+	for i := range gotExpense.Tags {
+		assert.Equal(t, gotExpense.Tags[i], toSeedExpense.Tags[i])
+	}
 
 }
 
 func TestUpdateExpenseById(t *testing.T) {
 
-	origExpense := seedExpense(t, `{
-		"title": "test",
-		"amount": 100.0,
-		"note": "test",
-		"tags": ["test1", "test2"]
-	}`)
+	toSeedExpense := database.Expense{
+		Title:  "test",
+		Amount: 100.0,
+		Note:   "test",
+		Tags:   []string{"test1", "test2"},
+	}
 
-	body := bytes.NewBufferString(`{
-		"title": "test-edited",
-		"amount": 120.0,
-		"note": "test-edited",
-		"tags": ["test1", "test2","test3"]
-	}`)
+	toSeedBytes, err := json.Marshal(toSeedExpense)
+
+	if err != nil {
+		t.Errorf("Error in encoding request body: %v", err)
+	}
+
+	origExpense := seedExpense(t, string(toSeedBytes))
+
+	bodyExpense := database.Expense{
+		Title:  "test-edited",
+		Amount: 120.0,
+		Note:   "test-edited",
+		Tags:   []string{"test1", "test2", "test3"},
+	}
+	bodyBytes, err := json.Marshal(bodyExpense)
+
+	if err != nil {
+		t.Errorf("Error in encoding request body: %v", err)
+	}
+
+	body := bytes.NewBuffer(bodyBytes)
 
 	gotExpense := database.Expense{}
 
 	res := request(http.MethodPut, uri("expenses/"+strconv.Itoa(origExpense.Id)), body)
-	err := res.Decode(&gotExpense)
+	err = res.Decode(&gotExpense)
 
 	if err != nil {
 		t.Errorf("Error in decoding response: %v", err)
 	}
 
 	assert.Equal(t, res.StatusCode, http.StatusOK)
-	assert.Equal(t, gotExpense.Title, "test-edited")
-	assert.Equal(t, gotExpense.Amount, 120.0)
-	assert.Equal(t, gotExpense.Note, "test-edited")
-	assert.Equal(t, len(gotExpense.Tags), 3)
-	assert.Equal(t, gotExpense.Tags[0], "test1")
-	assert.Equal(t, gotExpense.Tags[1], "test2")
-	assert.Equal(t, gotExpense.Tags[2], "test3")
+	assert.Equal(t, gotExpense.Title, bodyExpense.Title)
+	assert.Equal(t, gotExpense.Amount, bodyExpense.Amount)
+	assert.Equal(t, gotExpense.Note, bodyExpense.Note)
+	assert.Equal(t, len(gotExpense.Tags), len(bodyExpense.Tags))
+
+	for i := range gotExpense.Tags {
+		assert.Equal(t, gotExpense.Tags[i], bodyExpense.Tags[i])
+	}
 
 }
 
 func TestGetAllExpenses(t *testing.T) {
 
-	seedExpense(t, `{
-		"title": "test",
-		"amount": 100.0,
-		"note": "test",
-		"tags": ["test1", "test2"]
-	}`)
-	seedExpense(t, `{
-		"title": "test2",
-		"amount": 120.0,
-		"note": "test2",
-		"tags": ["test1", "test2" ,"test3"]
-	}`)
+	toSeedExpenses := []database.Expense{{
+		Title:  "test",
+		Amount: 100.0,
+		Note:   "test",
+		Tags:   []string{"test1", "test2"},
+	}, {
+		Title:  "test2",
+		Amount: 120.0,
+		Note:   "test2",
+		Tags:   []string{"test1", "test2", "test3"},
+	}}
 
-	expenses := []database.Expense{}
+	for _, toSeedExpense := range toSeedExpenses {
+		toSeedBytes, err := json.Marshal(toSeedExpense)
+
+		if err != nil {
+			t.Errorf("Error in encoding request body: %v", err)
+		}
+
+		seedExpense(t, string(toSeedBytes))
+	}
+
+	gotExpenses := []database.Expense{}
 
 	res := request(http.MethodGet, uri("expenses"), nil)
-	err := res.Decode(&expenses)
+	err := res.Decode(&gotExpenses)
 
-	expenseLen := len(expenses)
+	expenseLen := len(gotExpenses)
+
+	lastTwoIndexOfGotExpense := []int{expenseLen - 2, expenseLen - 1}
 
 	if err != nil {
 		t.Errorf("Error in decoding response: %v", err)
 	}
 
 	assert.Equal(t, res.StatusCode, http.StatusOK)
-	assert.Equal(t, expenses[expenseLen-2].Title, "test")
-	assert.Equal(t, expenses[expenseLen-2].Amount, 100.0)
-	assert.Equal(t, expenses[expenseLen-2].Note, "test")
-	assert.Equal(t, len(expenses[expenseLen-2].Tags), 2)
-	assert.Equal(t, expenses[expenseLen-2].Tags[0], "test1")
-	assert.Equal(t, expenses[expenseLen-2].Tags[1], "test2")
 
-	assert.Equal(t, expenses[expenseLen-1].Title, "test2")
-	assert.Equal(t, expenses[expenseLen-1].Amount, 120.0)
-	assert.Equal(t, expenses[expenseLen-1].Note, "test2")
-	assert.Equal(t, len(expenses[expenseLen-1].Tags), 3)
-	assert.Equal(t, expenses[expenseLen-1].Tags[0], "test1")
-	assert.Equal(t, expenses[expenseLen-1].Tags[1], "test2")
-	assert.Equal(t, expenses[expenseLen-1].Tags[2], "test3")
+	for i, indexOfGotExpense := range lastTwoIndexOfGotExpense {
+		assert.Equal(t, gotExpenses[indexOfGotExpense].Title, toSeedExpenses[i].Title)
+		assert.Equal(t, gotExpenses[indexOfGotExpense].Amount, toSeedExpenses[i].Amount)
+		assert.Equal(t, gotExpenses[indexOfGotExpense].Note, toSeedExpenses[i].Note)
+		assert.Equal(t, len(gotExpenses[indexOfGotExpense].Tags), len(toSeedExpenses[i].Tags))
+
+		for j := range gotExpenses[indexOfGotExpense].Tags {
+			assert.Equal(t, gotExpenses[indexOfGotExpense].Tags[j], toSeedExpenses[i].Tags[j])
+		}
+
+	}
 
 }
 
